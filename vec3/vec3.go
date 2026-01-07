@@ -2,6 +2,7 @@ package vec3
 
 import (
 	"math"
+	"rt/constants"
 )
 
 type Vec3 struct {
@@ -128,4 +129,29 @@ func UnitVector(v Vec3) Vec3 {
     return DivScalar(v, v.Length());
 }
 
+func RandUnitVector() Vec3 {
+	for {
+		var p = RandRange(-1, 1)
+		var lensq = p.LengthSquared()
+		if lensq > 1e-160 && lensq <= 1 {
+			return DivScalar(p, math.Sqrt(lensq))
+		}
+	}
+}
 
+func RandOnHemisphere(normal Vec3) Vec3 {
+	var on_unit_sphere = RandUnitVector()
+	if Dot(on_unit_sphere, normal) > 0.0 {
+		return on_unit_sphere
+	} else {
+		return on_unit_sphere.Neg()
+	}
+}
+
+func Random() Vec3 {
+	return NewXYZ(constants.RandDouble(), constants.RandDouble(), constants.RandDouble())
+}
+
+func RandRange(min, max float64) Vec3 {
+	return NewXYZ(constants.RandDoubleRange(min, max), constants.RandDoubleRange(min, max), constants.RandDoubleRange(min, max))
+}

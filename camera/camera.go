@@ -18,7 +18,9 @@ var SamplesPerPixel int
 func ray_color(r ray.Ray, world hittable.Hittable) vec3.Vec3 {
 	rec := new(hittable.HitRecord)
 	if world.Hit(r, interval.New(0, constants.Infinity), rec) {
-		return vec3.MulScalar(vec3.Add(rec.Normal, vec3.NewXYZ(1, 1, 1)), 0.5)
+		var direction = vec3.RandOnHemisphere(rec.Normal)
+		return vec3.MulScalar(ray_color(ray.New(rec.P, direction), world), 0.5)
+		//return vec3.MulScalar(vec3.Add(rec.Normal, vec3.NewXYZ(1, 1, 1)), 0.5)
 	}
 
 	var unit_direction = vec3.UnitVector(r.Direction())
