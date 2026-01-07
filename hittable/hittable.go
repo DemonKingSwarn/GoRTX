@@ -3,6 +3,7 @@ package hittable
 import (
 	"rt/ray"
 	"rt/vec3"
+	"rt/interval"
 )
 
 type HitRecord struct {
@@ -13,7 +14,7 @@ type HitRecord struct {
 }
 
 type Hittable interface {
-	Hit(r ray.Ray, tMin, tMax float64, rec *HitRecord) bool
+	Hit(r ray.Ray, ray_t interval.Interval, rec *HitRecord) bool
 
 }
 
@@ -50,22 +51,21 @@ func (hl *HittableList) Add(obj Hittable) {
 
 func (hl *HittableList) Hit(
 	r ray.Ray,
-	tMin float64,
-	tMax float64,
+	ray_t interval.Interval,
 	rec *HitRecord,
 ) bool {
 
-	tempRec := HitRecord{}
-	hitAnything := false
-	closestSoFar := tMax
+	temp_rec := HitRecord{}
+	hit_anything := false
+	closest_so_far := ray_t.Max
 
 	for _, object := range hl.Objects {
-		if object.Hit(r, tMin, closestSoFar, &tempRec) {
-			hitAnything = true
-			closestSoFar = tempRec.T
-			*rec = tempRec
+		if object.Hit(r, interval.New(ray_t.Min, closest_so_far), &temp_rec) {
+			hit_anything = true
+			closest_so_far = temp_rec.T
+			*rec = temp_rec
 		}
 	}
 
-	return hitAnything
+	return hit_anything
 }

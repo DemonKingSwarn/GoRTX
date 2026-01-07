@@ -1,9 +1,9 @@
 package main
 
 import (
-	"rt/image"
+	"rt/world"
 )
 
 func main() {
-	image.Render()
+	world.Main()
 }

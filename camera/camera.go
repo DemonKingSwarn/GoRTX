@@ -1,4 +1,4 @@
-package image
+package camera
 
 import (
 	"fmt"
@@ -8,12 +8,12 @@ import (
 	"rt/hittable"
 	"rt/interval"
 	"rt/ray"
-	"rt/sphere"
 	"rt/vec3"
 )
 
 var AspectRatio float64
 var ImageWidth int
+var SamplesPerPixel int
 
 func ray_color(r ray.Ray, world hittable.Hittable) vec3.Vec3 {
 	rec := new(hittable.HitRecord)
@@ -30,7 +30,7 @@ func ray_color(r ray.Ray, world hittable.Hittable) vec3.Vec3 {
 	)
 }
 
-func Render() {
+func Render(world hittable.Hittable) {
 	// image
 	aspect_ratio := AspectRatio
 	image_width := ImageWidth
@@ -41,12 +41,8 @@ func Render() {
 		image_height = 1
 	}
 
-	// world
-	world := new(hittable.HittableList)
-
-	world.Add(sphere.Sphere{Center: vec3.NewXYZ(0, 0, -1), Radius: 0.5})
-	world.Add(sphere.Sphere{Center: vec3.NewXYZ(0, -100.5, -1), Radius: 100})
-
+	var pixel_samples_scale float64 = 1.0 / float64(SamplesPerPixel)
+	
 	// camera
 	var focal_length float64 = 1.0
 	var viewport_height float64 = 2.0
@@ -81,20 +77,27 @@ func Render() {
 
 	for j := 0; j < image_height; j++ {
 		for i := 0; i < image_width; i++ {
-			var pixel_center = vec3.Add(
-				pixel00_loc,
-				vec3.Add(
-					vec3.MulScalar(pixel_delta_u, float64(i)),
-					vec3.MulScalar(pixel_delta_v, float64(j)),
-				),
-			)
-			
-			var ray_direction = vec3.UnitVector(vec3.Sub(pixel_center, camera_center))
-			var r = ray.New(camera_center, ray_direction)
-
-			var pixel_color = ray_color(r, world)
-
+			var pixel_color = vec3.NewXYZ(0, 0, 0)
+			for sample := 0; sample < SamplesPerPixel; sample++ {
+				var r = GetRay(i, j, pixel00_loc, pixel_delta_u, pixel_delta_v, camera_center)
+				pixel_color = vec3.Add(pixel_color, ray_color(r, world))
+			}
+			pixel_color = vec3.MulScalar(pixel_color, pixel_samples_scale)
 			color.WriteColor(pixel_color)
 		}
 	}
+}
+
+func GetRay(i, j int, pixel00_loc, pixel_delta_u, pixel_delta_v, center vec3.Vec3) ray.Ray {
+	var offset = sample_square()
+	var pixel_sample = vec3.Add(pixel00_loc, vec3.Add(vec3.MulScalar(pixel_delta_u, (float64(i) + offset.X())), vec3.MulScalar(pixel_delta_v, (float64(j) + offset.Y()))))
+
+	var ray_origin = center
+	var ray_direction = vec3.Sub(pixel_sample, ray_origin)
+
+	return ray.New(ray_origin, ray_direction)
+}
+
+func sample_square() vec3.Vec3 {
+	return vec3.NewXYZ(constants.RandDouble() - 0.5, constants.RandDouble() - 0.5, 0)
 }

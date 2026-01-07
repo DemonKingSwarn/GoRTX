@@ -3,6 +3,7 @@ package color
 import (
 	"fmt"
 	"rt/vec3"
+	"rt/interval"
 )
 
 func WriteColor(pixel_color vec3.Vec3) {
@@ -10,9 +11,10 @@ func WriteColor(pixel_color vec3.Vec3) {
 	g := pixel_color.Y()
 	b := pixel_color.Z()
 
-	var rbyte int = int(255.999 * r)
-	var gbyte int = int(255.999 * g)
-	var bbyte int = int(255.999 * b)
+	intensity := interval.New(0.000, 0.999)
+	var rbyte int = int(256 * intensity.Clamp(r))
+	var gbyte int = int(256 * intensity.Clamp(g))
+	var bbyte int = int(256 * intensity.Clamp(b))
 
 	fmt.Print(rbyte, " ", gbyte, " ", bbyte, "\n")
 }

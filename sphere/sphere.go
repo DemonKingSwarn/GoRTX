@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"rt/hittable"
+	"rt/interval"
 	"rt/ray"
 	"rt/vec3"
 )
@@ -13,7 +14,7 @@ type Sphere struct {
 	Radius float64
 }
 
-func (s Sphere) Hit(r ray.Ray, tMin float64, tMax float64, rec *hittable.HitRecord) bool {
+func (s Sphere) Hit(r ray.Ray, ray_t interval.Interval, rec *hittable.HitRecord) bool {
 	oc := vec3.Sub(s.Center, r.Origin())
 	
 	a := r.Direction().LengthSquared()
@@ -29,9 +30,9 @@ func (s Sphere) Hit(r ray.Ray, tMin float64, tMax float64, rec *hittable.HitReco
 
 	root := (h - sqrtd) / a
 
-	if root <= tMin || tMax <= root {
+	if !ray_t.Surrounds(root) {
 		root = (h + sqrtd) / a
-		if root <= tMin || tMax <= root {
+		if !ray_t.Surrounds(root) {
 			return false
 		}
 	}
