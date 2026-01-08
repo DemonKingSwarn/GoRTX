@@ -2,14 +2,27 @@ package color
 
 import (
 	"fmt"
-	"rt/vec3"
+	"math"
 	"rt/interval"
+	"rt/vec3"
 )
+
+func LinearToGamma(linear_component float64) float64 {
+	if linear_component > 0 {
+		return math.Sqrt(linear_component)
+	}
+
+	return 0
+}
 
 func WriteColor(pixel_color vec3.Vec3) {
 	r := pixel_color.X()
 	g := pixel_color.Y()
 	b := pixel_color.Z()
+
+	r = LinearToGamma(r)
+	g = LinearToGamma(g)
+	b = LinearToGamma(b)
 
 	intensity := interval.New(0.000, 0.999)
 	var rbyte int = int(256 * intensity.Clamp(r))

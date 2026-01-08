@@ -148,10 +148,19 @@ func RandOnHemisphere(normal Vec3) Vec3 {
 	}
 }
 
+func Reflect(v, n Vec3) Vec3 {
+	return Sub(v, MulScalar(MulScalar(n, Dot(v, n)), 2))
+}
+
 func Random() Vec3 {
 	return NewXYZ(constants.RandDouble(), constants.RandDouble(), constants.RandDouble())
 }
 
 func RandRange(min, max float64) Vec3 {
 	return NewXYZ(constants.RandDoubleRange(min, max), constants.RandDoubleRange(min, max), constants.RandDoubleRange(min, max))
+}
+
+func (v Vec3) NearZero() bool {
+	var s = 1e-8
+	return (math.Abs(v.E[0]) < s) && (math.Abs(v.E[1]) < s) && (math.Abs(v.E[2]) < s)
 }

@@ -1,14 +1,16 @@
 package hittable
 
 import (
+	"rt/interval"
+	"rt/material"
 	"rt/ray"
 	"rt/vec3"
-	"rt/interval"
 )
 
 type HitRecord struct {
 	P vec3.Point3
 	Normal vec3.Vec3
+	Mat material.Material
 	T float64
 	FrontFace bool
 }
@@ -68,4 +70,13 @@ func (hl *HittableList) Hit(
 	}
 
 	return hit_anything
+}
+
+func (rec *HitRecord) ToMaterialRecord() material.HitRecordLite {
+	return material.HitRecordLite{
+		P:         rec.P,
+		Normal:    rec.Normal,
+		FrontFace: rec.FrontFace,
+		T:         rec.T,
+	}
 }

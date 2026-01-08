@@ -14,13 +14,22 @@ import (
 var AspectRatio float64
 var ImageWidth int
 var SamplesPerPixel int
+var MaxDepth int
 
-func ray_color(r ray.Ray, world hittable.Hittable) vec3.Vec3 {
+func ray_color(r ray.Ray, world hittable.Hittable, depth int) vec3.Vec3 {
+	if depth <= 0 {
+		return vec3.New()
+	}
+
 	rec := new(hittable.HitRecord)
-	if world.Hit(r, interval.New(0, constants.Infinity), rec) {
-		var direction = vec3.RandOnHemisphere(rec.Normal)
-		return vec3.MulScalar(ray_color(ray.New(rec.P, direction), world), 0.5)
-		//return vec3.MulScalar(vec3.Add(rec.Normal, vec3.NewXYZ(1, 1, 1)), 0.5)
+
+	if world.Hit(r, interval.New(0.001, constants.Infinity), rec) {
+		scattered := new(ray.Ray)
+		attenuation := new(vec3.Vec3)
+		if rec.Mat.Scatter(r, rec.ToMaterialRecord(), attenuation, scattered) {
+			return vec3.Mul(*attenuation, ray_color(*scattered, world, depth - 1))
+		}
+		return vec3.New()
 	}
 
 	var unit_direction = vec3.UnitVector(r.Direction())
@@ -82,7 +91,7 @@ func Render(world hittable.Hittable) {
 			var pixel_color = vec3.NewXYZ(0, 0, 0)
 			for sample := 0; sample < SamplesPerPixel; sample++ {
 				var r = GetRay(i, j, pixel00_loc, pixel_delta_u, pixel_delta_v, camera_center)
-				pixel_color = vec3.Add(pixel_color, ray_color(r, world))
+				pixel_color = vec3.Add(pixel_color, ray_color(r, world, MaxDepth))
 			}
 			pixel_color = vec3.MulScalar(pixel_color, pixel_samples_scale)
 			color.WriteColor(pixel_color)
