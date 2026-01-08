@@ -47,15 +47,3 @@ func (s Sphere) Hit(r ray.Ray, ray_t interval.Interval, rec *hittable.HitRecord)
 
 	return true
 }
-
-func New(center vec3.Point3, radius float64, mat material.Material) *Sphere {
-	if radius < 0 {
-		radius = 0
-	}
-
-	return &Sphere{
-		Center: center,
-		Radius: radius,
-		Mat:    mat,
-	}
-}
