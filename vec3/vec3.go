@@ -152,6 +152,13 @@ func Reflect(v, n Vec3) Vec3 {
 	return Sub(v, MulScalar(MulScalar(n, Dot(v, n)), 2))
 }
 
+func Refract(uv, n Vec3, etai_over_estat float64) Vec3 {
+	cos_theta := math.Min(Dot(uv.Neg(), n), 1.0)
+	r_out_perp := MulScalar(Add(MulScalar(n, cos_theta), uv), etai_over_estat)
+	r_out_parallel := MulScalar(n, -math.Sqrt(1.0 - r_out_perp.LengthSquared()))
+	return Add(r_out_perp, r_out_parallel)
+}
+
 func Random() Vec3 {
 	return NewXYZ(constants.RandDouble(), constants.RandDouble(), constants.RandDouble())
 }
@@ -163,4 +170,13 @@ func RandRange(min, max float64) Vec3 {
 func (v Vec3) NearZero() bool {
 	var s = 1e-8
 	return (math.Abs(v.E[0]) < s) && (math.Abs(v.E[1]) < s) && (math.Abs(v.E[2]) < s)
+}
+
+func RandomInUnitDisk() Vec3 {
+	for {
+		var p = NewXYZ(constants.RandDoubleRange(-1, 1), constants.RandDoubleRange(-1, 1), 0)
+		if p.LengthSquared() < 1 {
+			return p
+		}
+	}
 }

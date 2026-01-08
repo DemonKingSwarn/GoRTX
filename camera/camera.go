@@ -2,6 +2,7 @@ package camera
 
 import (
 	"fmt"
+	"math"
 
 	"rt/color"
 	"rt/constants"
@@ -15,6 +16,17 @@ var AspectRatio float64
 var ImageWidth int
 var SamplesPerPixel int
 var MaxDepth int
+
+var VFOV int
+var LookFrom vec3.Point3
+var LookAt vec3.Point3
+var Vup vec3.Vec3
+
+var DefocusAngle float64
+var FocusDist float64
+
+var defocus_disk_u vec3.Vec3
+var defocus_disk_v vec3.Vec3
 
 func ray_color(r ray.Ray, world hittable.Hittable, depth int) vec3.Vec3 {
 	if depth <= 0 {
@@ -55,32 +67,42 @@ func Render(world hittable.Hittable) {
 	var pixel_samples_scale float64 = 1.0 / float64(SamplesPerPixel)
 	
 	// camera
-	var focal_length float64 = 1.0
-	var viewport_height float64 = 2.0
+	//var focal_length float64 = vec3.Sub(LookFrom, LookAt).Length()
+	var theta float64 = constants.DegToRad(float64(VFOV))
+	var h float64 = math.Tan(theta/2)
+	var viewport_height float64 = 2 * h * FocusDist
 	var viewport_width float64 = viewport_height * (float64(image_width) / float64(image_height))
-	var camera_center = vec3.NewXYZ(0, 0, 0)
+	var camera_center = LookFrom
+
+	var u, v, w vec3.Vec3
+
+	// calculate the u,v,w unit basis vectors for the camera coordinate frame
+	w = vec3.UnitVector(vec3.Sub(LookFrom, LookAt))
+	u = vec3.UnitVector(vec3.Cross(Vup, w))
+	v = vec3.Cross(w, u)
 
 	// calculate the vector across the horizontal and down the vertical viewport edges
-	var viewport_u = vec3.NewXYZ(viewport_width, 0, 0)
-	var viewport_v = vec3.NewXYZ(0, -viewport_height, 0)
+	var viewport_u = vec3.MulScalar(u, viewport_width)
+	var viewport_v = vec3.MulScalar(v.Neg(), viewport_height)
 
 	// calculate the horizontal and vertical delta vector from pixel to pixel
 	var pixel_delta_u = vec3.MulScalar(viewport_u, 1/float64(image_width))
 	var pixel_delta_v = vec3.MulScalar(viewport_v, 1/float64(image_height))
 
 	// calculate the location of the upper left pixel
-	var viewport_upper_left = vec3.Sub(
+	viewport_upper_left := vec3.Sub(
 		vec3.Sub(
-			vec3.Sub(
-				camera_center,
-				vec3.NewXYZ(0, 0, focal_length),
-			),
-			vec3.MulScalar(viewport_u, 0.5),
+			vec3.Sub(camera_center, vec3.MulScalar(w, FocusDist)),
+			vec3.DivScalar(viewport_u, 2),
 		),
-		vec3.MulScalar(viewport_v, 0.5),
+		vec3.DivScalar(viewport_v, 2),
 	)
-
+	
 	var pixel00_loc = vec3.Add(viewport_upper_left, vec3.MulScalar(vec3.Add(pixel_delta_u, pixel_delta_v), 0.5))
+
+	defocus_radius := float64(FocusDist) * math.Tan(constants.DegToRad(DefocusAngle / float64(2)))
+	defocus_disk_u = vec3.MulScalar(u, defocus_radius)
+	defocus_disk_v = vec3.MulScalar(v,defocus_radius)
 
 	// render
 
@@ -103,7 +125,12 @@ func GetRay(i, j int, pixel00_loc, pixel_delta_u, pixel_delta_v, center vec3.Vec
 	var offset = sample_square()
 	var pixel_sample = vec3.Add(pixel00_loc, vec3.Add(vec3.MulScalar(pixel_delta_u, (float64(i) + offset.X())), vec3.MulScalar(pixel_delta_v, (float64(j) + offset.Y()))))
 
-	var ray_origin = center
+	var ray_origin vec3.Vec3
+	if DefocusAngle <= 0 {
+		ray_origin = center
+	} else {
+		ray_origin = DefocusDiskSample(center)
+	}
 	var ray_direction = vec3.Sub(pixel_sample, ray_origin)
 
 	return ray.New(ray_origin, ray_direction)
@@ -111,4 +138,14 @@ func GetRay(i, j int, pixel00_loc, pixel_delta_u, pixel_delta_v, center vec3.Vec
 
 func sample_square() vec3.Vec3 {
 	return vec3.NewXYZ(constants.RandDouble() - 0.5, constants.RandDouble() - 0.5, 0)
+}
+
+func DefocusDiskSample(center vec3.Vec3) vec3.Point3 {
+	p := vec3.RandomInUnitDisk()
+	return vec3.Add(
+		center, vec3.Add(
+			vec3.MulScalar(defocus_disk_u, p.E[0]),
+			vec3.MulScalar(defocus_disk_v, p.E[1]),
+		),
+	)
 }
