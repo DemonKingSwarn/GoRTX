@@ -2,7 +2,7 @@
 
 A ray tracer written in Go
 
-![Image showcasing the raytracer](./.assets/final.webp)
+![Image showcasing the raytracer](./render/final.png)
 
 ## Features
 
